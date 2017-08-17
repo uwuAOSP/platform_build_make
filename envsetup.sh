@@ -476,7 +476,7 @@ function _lunch_meat()
     set_stuff_for_environment
     [[ -n "${ANDROID_QUIET_BUILD:-}" ]] || printconfig
 
-    if [[ -z "${ANDROID_QUIET_BUILD}" && -z "${LINEAGE_BUILD}" ]]; then
+    if [[ -z "${ANDROID_QUIET_BUILD}" && -z "${UWU_BUILD}" ]]; then
         local spam_for_lunch=$(gettop)/build/make/tools/envsetup/spam_for_lunch
         if [[ -x $spam_for_lunch ]]; then
             $spam_for_lunch
@@ -572,10 +572,19 @@ function lunch()
         fi
     fi
 
-    # Validate the selection and set all the environment stuff
-    _lunch_meat $product $release $variant
+    # Keep uwuAOSP board configuration available during build variable setup.
+    if [[ "$product" == uwu_* ]]; then
+        export UWU_BUILD="${product#uwu_}"
+    else
+        unset UWU_BUILD
+    fi
 
-    _lunch_store_leftovers $product $release $variant
+    # Validate the selection and set all the environment stuff
+    if ! _lunch_meat "$product" "$release" "$variant"; then
+        return 1
+    fi
+
+    _lunch_store_leftovers "$product" "$release" "$variant"
 }
 
 function leftovers()
