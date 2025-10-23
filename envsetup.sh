@@ -475,6 +475,11 @@ function _lunch_meat()
     local prebuilt_kernel=$(_get_build_var_cached TARGET_PREBUILT_KERNEL)
     if [[ "$no_kernel" == "true" ]] || [ -n "$prebuilt_kernel" ]; then
         unset INLINE_KERNEL_BUILDING
+        if [ -n "$(_get_build_var_cached TARGET_KERNEL_PLATFORM_SOURCE)" ]; then
+            if ! build_kernel; then
+                return 1
+            fi
+        fi
     else
         export INLINE_KERNEL_BUILDING=true
     fi
