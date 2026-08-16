@@ -57,11 +57,15 @@ function build_build_var_cache()
 {
     local T=$(gettop)
     local one_true_awk=$T/prebuilts/build-tools/$(get_host_prebuilt_prefix)/bin/one-true-awk
+    local uwu_color_output=never
+    if [ -t 1 ] && [ -z "${NO_COLOR:-}" ] && [ "${TERM:-dumb}" != "dumb" ]; then
+        uwu_color_output=always
+    fi
     # Grep out the variable names from the script.
     cached_vars=(`cat $T/build/envsetup.sh $T/vendor/uwu/build/envsetup.sh | tr '()' '  ' | $one_true_awk '{for(i=1;i<=NF;i++) if($i~/_get_build_var_cached/) print $(i+1)}' | grep -vE "^(print|COMMON_LUNCH_CHOICES)$" | sort -u | tr '\n' ' '`)
     cached_abs_vars=(`cat $T/build/envsetup.sh $T/vendor/uwu/build/envsetup.sh | tr '()' '  ' | $one_true_awk '{for(i=1;i<=NF;i++) if($i~/_get_abs_build_var_cached/) print $(i+1)}' | grep -vE "^(print|COMMON_LUNCH_CHOICES)$" | sort -u | tr '\n' ' '`)
     # Call the build system to dump the "<val>=<value>" pairs as a shell script.
-    build_dicts_script=`\builtin cd $T; build/soong/soong_ui.bash --dumpvars-mode \
+    build_dicts_script=`\builtin cd $T; UWU_COLOR_OUTPUT=$uwu_color_output build/soong/soong_ui.bash --dumpvars-mode \
                         --vars="${cached_vars[*]}" \
                         --abs-vars="${cached_abs_vars[*]}" \
                         --var-prefix=var_cache_ \
@@ -327,7 +331,11 @@ function printconfig()
         echo "Couldn't locate the top of the tree.  Try setting TOP." >&2
         return
     fi
-    _get_build_var_cached report_config
+    if [ -t 1 ] && [ -z "${NO_COLOR:-}" ] && [ "${TERM:-dumb}" != "dumb" ]; then
+        UWU_COLOR_OUTPUT=always _get_build_var_cached report_config
+    else
+        UWU_COLOR_OUTPUT=never _get_build_var_cached report_config
+    fi
 }
 
 function set_stuff_for_environment()
