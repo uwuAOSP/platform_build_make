@@ -61,6 +61,9 @@ $(call soong_config_set_bool, recovery ,has_board_cacheimage_partition_size ,$(i
 ifdef TARGET_RECOVERY_UI_LIB
   $(call soong_config_set_string_list, recovery, target_recovery_ui_lib, $(TARGET_RECOVERY_UI_LIB))
 endif
+ifdef TARGET_RECOVERY_UPDATER_LIBS
+  $(call soong_config_set_string_list, recovery, target_recovery_updater_libs, $(TARGET_RECOVERY_UPDATER_LIBS))
+endif
 
 # For Sanitizers
 $(call soong_config_set_bool,ANDROID,ASAN_ENABLED,$(if $(filter address,$(SANITIZE_TARGET)),true,false))
