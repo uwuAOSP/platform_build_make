@@ -1320,7 +1320,7 @@ endif
 .KATI_READONLY := RBE_POOL
 
 JAVAC_NINJA_POOL :=
-R8_NINJA_POOL :=
+R8_NINJA_POOL := highmem_pool
 D8_NINJA_POOL :=
 
 ifneq ($(filter-out false,$(USE_RBE)),)
