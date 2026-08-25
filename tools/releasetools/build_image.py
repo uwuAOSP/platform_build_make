@@ -523,6 +523,12 @@ def BuildImage(in_dir, prop_dict, out_file, target_out=None, otatools_dir=None):
   Raises:
     BuildImageError: On build image failures.
   """
+  if prop_dict.get("mount_point") == "data":
+    with open(out_file, "w") as output:
+      output.truncate()
+    logger.info("Skipping userdata image contents for %s.", out_file)
+    return
+
   in_dir, fs_config = SetUpInDirAndFsConfig(in_dir, prop_dict)
   SetUUIDIfNotExist(prop_dict)
 
