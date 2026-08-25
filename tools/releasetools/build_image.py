@@ -564,59 +564,26 @@ def BuildImage(in_dir, prop_dict, out_file, target_out=None, otatools_dir=None):
       size = GetDiskUsage(in_dir)
     logger.info(
         "The tree size of %s is %d MB.", in_dir, size // BYTES_IN_MB)
-    size = CalculateSizeAndReserved(prop_dict, size)
+    if fs_type.startswith("ext"):
+      size = int(size * 1.2) + int(prop_dict.get("partition_reserved_size", 0))
+    else:
+      size = CalculateSizeAndReserved(prop_dict, size)
     # Round this up to a multiple of 4K so that avbtool works
     size = common.RoundUpTo4K(size)
     if fs_type.startswith("ext"):
+      # Dynamic ext4 sizing used to build and inspect a first-pass image before
+      # rebuilding it at the exact size. Keep the automatic sizing, but retain
+      # enough headroom to build the image in one pass, including ext4 metadata
+      # and the journal.
       prop_dict["partition_size"] = str(size)
       prop_dict["image_size"] = str(size)
       if "extfs_inode_count" not in prop_dict:
         prop_dict["extfs_inode_count"] = str(GetInodeUsage(in_dir))
       logger.info(
-          "First Pass based on estimates of %d MB and %s inodes.",
+          "Single pass based on estimates of %d MB and %s inodes.",
           size // BYTES_IN_MB, prop_dict["extfs_inode_count"])
-      BuildImageMkfs(in_dir, prop_dict, out_file, target_out, fs_config, otatools_dir)
-      sparse_image = False
-      if "extfs_sparse_flag" in prop_dict and not disable_sparse:
-        sparse_image = True
-      fs_dict = GetFilesystemCharacteristics(fs_type, out_file, sparse_image)
-      os.remove(out_file)
-      block_size = int(fs_dict.get("Block size", "4096"))
-      free_size = int(fs_dict.get("Free blocks", "0")) * block_size
-      reserved_size = int(prop_dict.get("partition_reserved_size", 0))
-      partition_headroom = int(fs_dict.get("partition_headroom", 0))
-      if fs_type.startswith("ext4") and partition_headroom > reserved_size:
-        reserved_size = partition_headroom
-      if free_size <= reserved_size:
-        logger.info(
-            "Not worth reducing image %d <= %d.", free_size, reserved_size)
-      else:
-        size -= free_size
-        size += reserved_size
-        if reserved_size == 0:
-          # add .3% margin
-          size = size * 1003 // 1000
-        # Use a minimum size, otherwise we will fail to calculate an AVB footer
-        # or fail to construct an ext4 image.
-        size = max(size, 256 * 1024)
-        if block_size <= 4096:
-          size = common.RoundUpTo4K(size)
-        else:
-          size = ((size + block_size - 1) // block_size) * block_size
-      if int(prop_dict["extfs_inode_count"]) >= 0:
-        extfs_inode_count = prop_dict["extfs_inode_count"]
-        inodes = int(fs_dict.get("Inode count", extfs_inode_count))
-        inodes -= int(fs_dict.get("Free inodes", "0"))
-        # add .2% margin or 1 inode, whichever is greater
-        spare_inodes = inodes * 2 // 1000
-        min_spare_inodes = 1
-        if spare_inodes < min_spare_inodes:
-          spare_inodes = min_spare_inodes
-        inodes += spare_inodes
-        prop_dict["extfs_inode_count"] = str(inodes)
-        logger.info(
-            "Allocating %d Inodes for %s.", inodes, out_file)
-      prop_dict["partition_size"] = str(size)
+      mkfs_output = BuildImageMkfs(
+          in_dir, prop_dict, out_file, target_out, fs_config, otatools_dir)
     elif fs_type.startswith("f2fs") and prop_dict.get("f2fs_compress") == "true":
       prop_dict["partition_size"] = str(size)
       prop_dict["image_size"] = str(size)
