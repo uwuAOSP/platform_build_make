@@ -1047,6 +1047,14 @@ endif
 
 # -----------------------------------------------------------------
 # dtbo image
+ifeq ($(BOARD_USES_SOONG_KERNEL),true)
+ifndef BOARD_PREBUILT_DTBOIMAGE
+ifneq ($(filter true,$(TARGET_NEEDS_DTBOIMAGE) $(BOARD_KERNEL_SEPARATED_DTBO)),)
+BOARD_PREBUILT_DTBOIMAGE := $(TARGET_OUT_INTERMEDIATES)/DTBO_OBJ/dtbo.img
+endif
+endif
+endif
+
 ifdef BOARD_PREBUILT_DTBOIMAGE
 INSTALLED_DTBOIMAGE_TARGET := $(PRODUCT_OUT)/dtbo.img
 
