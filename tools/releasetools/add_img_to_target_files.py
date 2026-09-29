@@ -305,8 +305,6 @@ def AddSystem(output_zip, recovery_img=None, boot_img=None):
 
   block_list = OutputFile(output_zip, OPTIONS.input_tmp,
                           "IMAGES", "system.map")
-  if not os.path.exists(block_list.name):
-    block_list = None
   CreateImage(OPTIONS.input_tmp, OPTIONS.info_dict, "system", img,
               block_list=block_list)
   return img.name
@@ -356,8 +354,6 @@ def AddVendor(output_zip, recovery_img=None, boot_img=None):
 
   block_list = OutputFile(output_zip, OPTIONS.input_tmp,
                           "IMAGES", "vendor.map")
-  if not os.path.exists(block_list.name):
-    block_list = None
   CreateImage(OPTIONS.input_tmp, OPTIONS.info_dict, "vendor", img,
               block_list=block_list)
   return img.name
@@ -374,8 +370,6 @@ def AddProduct(output_zip):
 
   block_list = OutputFile(
       output_zip, OPTIONS.input_tmp, "IMAGES", "product.map")
-  if not os.path.exists(block_list.name):
-    block_list = None
   CreateImage(
       OPTIONS.input_tmp, OPTIONS.info_dict, "product", img,
       block_list=block_list)
@@ -394,8 +388,6 @@ def AddSystemExt(output_zip):
 
   block_list = OutputFile(
       output_zip, OPTIONS.input_tmp, "IMAGES", "system_ext.map")
-  if not os.path.exists(block_list.name):
-    block_list = None
   CreateImage(
       OPTIONS.input_tmp, OPTIONS.info_dict, "system_ext", img,
       block_list=block_list)
@@ -412,8 +404,6 @@ def AddOdm(output_zip):
 
   block_list = OutputFile(
       output_zip, OPTIONS.input_tmp, "IMAGES", "odm.map")
-  if not os.path.exists(block_list.name):
-    block_list = None
   CreateImage(
       OPTIONS.input_tmp, OPTIONS.info_dict, "odm", img,
       block_list=block_list)
@@ -430,8 +420,6 @@ def AddVendorDlkm(output_zip):
 
   block_list = OutputFile(
       output_zip, OPTIONS.input_tmp, "IMAGES", "vendor_dlkm.map")
-  if not os.path.exists(block_list.name):
-    block_list = None
   CreateImage(
       OPTIONS.input_tmp, OPTIONS.info_dict, "vendor_dlkm", img,
       block_list=block_list)
@@ -448,8 +436,6 @@ def AddOdmDlkm(output_zip):
 
   block_list = OutputFile(
       output_zip, OPTIONS.input_tmp, "IMAGES", "odm_dlkm.map")
-  if not os.path.exists(block_list.name):
-    block_list = None
   CreateImage(
       OPTIONS.input_tmp, OPTIONS.info_dict, "odm_dlkm", img,
       block_list=block_list)
@@ -466,8 +452,6 @@ def AddSystemDlkm(output_zip):
 
   block_list = OutputFile(
       output_zip, OPTIONS.input_tmp, "IMAGES", "system_dlkm.map")
-  if not os.path.exists(block_list.name):
-    block_list = None
   CreateImage(
       OPTIONS.input_tmp, OPTIONS.info_dict, "system_dlkm", img,
       block_list=block_list)
@@ -625,7 +609,7 @@ def CreateImage(input_dir, info_dict, what, output_file, block_list=None):
   build_image.BuildImage(
       os.path.join(input_dir, what.upper()), image_props, output_file.name)
 
-  if block_list and os.path.exists(block_list.name):
+  if block_list:
     block_list.Write()
   is_erofs = image_props.get("fs_type", "").startswith("erofs")
   output_file.Write(zipfile.ZIP_STORED if is_erofs else None)
