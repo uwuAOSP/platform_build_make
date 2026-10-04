@@ -544,6 +544,7 @@ $(call add_json_map, PartitionVarsForSoongMigrationOnlyDoNotUse)
 
   $(call add_json_bool, ProductUseDynamicPartitionSize, $(filter true,$(PRODUCT_USE_DYNAMIC_PARTITION_SIZE)))
   $(call add_json_bool, CopyImagesForTargetFilesZip, $(filter true,$(COPY_IMAGES_FOR_TARGET_FILES_ZIP)))
+  $(call add_json_bool, UseFixedTimestampImgFiles, $(filter true,$(USE_FIXED_TIMESTAMP_IMG_FILES)))
 
   $(call add_json_map, ProductPackagesSet)
     $(call add_json_map, all)
