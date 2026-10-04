@@ -390,7 +390,7 @@ $(call add_json_map, PartitionVarsForSoongMigrationOnlyDoNotUse)
   $(call add_json_str,  ProductDirectory,    $(dir $(INTERNAL_PRODUCT)))
 
   $(call add_json_map,PartitionQualifiedVariables)
-  $(foreach image_type,INIT_BOOT BOOT DTBO VENDOR_BOOT VENDOR_KERNEL_BOOT SYSTEM VENDOR CACHE USERDATA PRODUCT SYSTEM_EXT OEM ODM VENDOR_DLKM ODM_DLKM SYSTEM_DLKM VBMETA VBMETA_SYSTEM VBMETA_VENDOR VBMETA_SYSTEM_DLKM VBMETA_VENDOR_DLKM $(BOARD_CUSTOMIMAGES_PARTITION_LIST), \
+  $(foreach image_type,INIT_BOOT BOOT DTBO RECOVERY VENDOR_BOOT VENDOR_KERNEL_BOOT SYSTEM VENDOR CACHE USERDATA PRODUCT SYSTEM_EXT OEM ODM VENDOR_DLKM ODM_DLKM SYSTEM_DLKM VBMETA VBMETA_SYSTEM VBMETA_VENDOR VBMETA_SYSTEM_DLKM VBMETA_VENDOR_DLKM $(BOARD_CUSTOMIMAGES_PARTITION_LIST), \
     $(call add_json_map,$(call to-lower,$(image_type))) \
     $(call add_json_bool, BuildingImage, $(filter true,$(BUILDING_$(image_type)_IMAGE))) \
     $(call add_json_bool, PrebuiltImage, $(filter true,$(BOARD_PREBUILT_$(image_type)IMAGE))) \
@@ -453,6 +453,9 @@ $(call add_json_map, PartitionVarsForSoongMigrationOnlyDoNotUse)
   $(call add_json_str, BoardKernelBase, $(BOARD_KERNEL_BASE))
   $(call add_json_str, BoardInitBootimagePartitionSize, $(BOARD_INIT_BOOT_IMAGE_PARTITION_SIZE))
   $(call add_json_str, BoardBootHeaderVersion, $(BOARD_BOOT_HEADER_VERSION))
+  $(call add_json_str, BoardRecoveryMkbootimgArgs, $(if $(BOARD_RECOVERY_MKBOOTIMG_ARGS),$(BOARD_RECOVERY_MKBOOTIMG_ARGS),$(BOARD_MKBOOTIMG_ARGS)))
+  $(call add_json_bool, BoardExcludeKernelFromRecoveryImage, $(BOARD_EXCLUDE_KERNEL_FROM_RECOVERY_IMAGE))
+  $(call add_json_bool, BoardUsesFullRecoveryImage, $(filter true,$(BOARD_USES_FULL_RECOVERY_IMAGE)))
   $(call add_json_str, BoardInitBootHeaderVersion, $(BOARD_INIT_BOOT_HEADER_VERSION))
   $(call add_json_bool, BoardUsesGenericKernelImage, $(BOARD_USES_GENERIC_KERNEL_IMAGE))
   $(call add_json_str, BootSecurityPatch, $(BOOT_SECURITY_PATCH))
