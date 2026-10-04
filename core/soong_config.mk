@@ -607,6 +607,7 @@ $(call add_json_map, PartitionVarsForSoongMigrationOnlyDoNotUse)
 
   # Used to generate /vendor/build.prop
   $(call add_json_list, BoardInfoFiles, $(if $(TARGET_BOARD_INFO_FILES),$(TARGET_BOARD_INFO_FILES),$(firstword $(TARGET_BOARD_INFO_FILE) $(wildcard $(TARGET_DEVICE_DIR)/board-info.txt))))
+  $(call add_json_str, AndroidInfoExtraFile, $(firstword $(TARGET_ANDROID_INFO_EXTRA_FILE) $(wildcard $(TARGET_DEVICE_DIR)/android-info-extra.txt)))
   $(call add_json_str, BootLoaderBoardName, $(TARGET_BOOTLOADER_BOARD_NAME))
 
   $(call add_json_list, ProductCopyFiles, $(PRODUCT_COPY_FILES))
