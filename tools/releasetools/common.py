@@ -3652,26 +3652,28 @@ class BlockDifference(object):
         'update");\n'
         'endif;' % (code, partition))
 
+  def CompressNewData(self):
+    """Compresses the full OTA payload with brotli, if not done already."""
+    if self.src:
+      return
+    new_data_path = '{}.new.dat'.format(self.path)
+    brotli_path = '{}.new.dat.br'.format(self.path)
+    if os.path.exists(brotli_path):
+      return
+    # Quality 4 is about 3-4x faster than the upstream default of 6, with
+    # roughly 2-5% larger payloads depending on image compressibility.
+    print("Compressing {}.new.dat with brotli".format(self.partition))
+    RunAndCheckOutput(['brotli', '--quality=4',
+                       '--output=' + brotli_path, new_data_path])
+
   def _WriteUpdate(self, script, output_zip):
     ZipWrite(output_zip,
              '{}.transfer.list'.format(self.path),
              '{}.transfer.list'.format(self.partition))
 
-    # For full OTA, compress the new.dat with brotli with quality 6 to reduce
-    # its size. Quailty 9 almost triples the compression time but doesn't
-    # further reduce the size too much. For a typical 1.8G system.new.dat
-    #                       zip  | brotli(quality 6)  | brotli(quality 9)
-    #   compressed_size:    942M | 869M (~8% reduced) | 854M
-    #   compression_time:   75s  | 265s               | 719s
-    #   decompression_time: 15s  | 25s                | 25s
+    self.CompressNewData()
 
     if not self.src:
-      brotli_cmd = ['brotli', '--quality=6',
-                    '--output={}.new.dat.br'.format(self.path),
-                    '{}.new.dat'.format(self.path)]
-      print("Compressing {}.new.dat with brotli".format(self.partition))
-      RunAndCheckOutput(brotli_cmd)
-
       new_data_name = '{}.new.dat.br'.format(self.partition)
       ZipWrite(output_zip,
                '{}.new.dat.br'.format(self.path),

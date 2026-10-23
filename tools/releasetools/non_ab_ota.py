@@ -13,6 +13,7 @@
 # limitations under the License.
 
 import collections
+from concurrent.futures import ThreadPoolExecutor
 import logging
 import os
 import zipfile
@@ -174,6 +175,13 @@ def WriteFullOTAPackage(input_zip, output_file):
                                         target_info=target_info,
                                         source_info=None,
                                         device_specific=device_specific)
+
+  # Compressing each partition is independent and dominates packaging time;
+  # run the compressors concurrently before writing the package.
+  if block_diff_dict:
+    with ThreadPoolExecutor(max_workers=len(block_diff_dict)) as pool:
+      list(pool.map(lambda diff: diff.CompressNewData(),
+                    block_diff_dict.values()))
 
   # Two-step package strategy (in chronological order, which is *not*
   # the order in which the generated script has things):
