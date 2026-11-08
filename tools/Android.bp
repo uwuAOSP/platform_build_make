@@ -18,6 +18,11 @@ package {
 }
 
 python_binary_host {
+    name: "copy_partition_files",
+    srcs: ["copy_partition_files.py"],
+}
+
+python_binary_host {
     name: "generate-self-extracting-archive",
     srcs: ["generate-self-extracting-archive.py"],
 }

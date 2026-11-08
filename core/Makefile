@@ -6391,6 +6391,17 @@ define package_files-copy-root
   fi
 endef
 
+# Use the same partition file lists as build_image instead of packaging files
+# left behind by individual module builds.
+# $(1): Partition staging directory
+# $(2): Target-files destination
+# $(3): Partition file list
+define package_files-copy-partition
+  $(if $(BUILD_BROKEN_INCORRECT_PARTITION_IMAGES), \
+    $(call package_files-copy-root,$(1),$(2)), \
+    $(HOST_OUT_EXECUTABLES)/copy_partition_files $(strip $(1)) $(strip $(2)) $(strip $(3)))
+endef
+
 built_ota_tools :=
 
 
@@ -6573,7 +6584,7 @@ $(foreach image_type,INIT_BOOT BOOT VENDOR_BOOT VENDOR_KERNEL_BOOT SYSTEM VENDOR
 # full system image deps, we speed up builds that do not build the system
 # image.
 ifdef BUILDING_SYSTEM_IMAGE
-  $(BUILT_TARGET_FILES_DIR): $(FULL_SYSTEMIMAGE_DEPS)
+  $(BUILT_TARGET_FILES_DIR): $(FULL_SYSTEMIMAGE_DEPS) $(systemimage_intermediates)/file_list.txt
   ifdef COPY_IMAGES_FOR_TARGET_FILES_ZIP
     $(BUILT_TARGET_FILES_DIR): $(BUILT_SYSTEMIMAGE)
   endif
@@ -6584,11 +6595,11 @@ else
 endif
 
 ifdef BUILDING_USERDATA_IMAGE
-  $(BUILT_TARGET_FILES_DIR): $(INTERNAL_USERDATAIMAGE_FILES)
+  $(BUILT_TARGET_FILES_DIR): $(INTERNAL_USERDATAIMAGE_FILES) $(userdataimage_intermediates)/file_list.txt
 endif
 
 ifdef BUILDING_SYSTEM_OTHER_IMAGE
-  $(BUILT_TARGET_FILES_DIR): $(INTERNAL_SYSTEMOTHERIMAGE_FILES)
+  $(BUILT_TARGET_FILES_DIR): $(INTERNAL_SYSTEMOTHERIMAGE_FILES) $(systemotherimage_intermediates)/file_list.txt
   ifdef COPY_IMAGES_FOR_TARGET_FILES_ZIP
     $(BUILT_TARGET_FILES_DIR): $(BUILT_SYSTEMOTHERIMAGE_TARGET)
   endif
@@ -6630,7 +6641,7 @@ endif
 # if it is coming from a prebuilt.
 
 ifdef BUILDING_VENDOR_IMAGE
-  $(BUILT_TARGET_FILES_DIR): $(INTERNAL_VENDORIMAGE_FILES)
+  $(BUILT_TARGET_FILES_DIR): $(INTERNAL_VENDORIMAGE_FILES) $(vendorimage_intermediates)/file_list.txt
   ifdef COPY_IMAGES_FOR_TARGET_FILES_ZIP
     $(BUILT_TARGET_FILES_DIR): $(BUILT_VENDORIMAGE_TARGET)
   endif
@@ -6639,7 +6650,7 @@ else ifdef BOARD_PREBUILT_VENDORIMAGE
 endif
 
 ifdef BUILDING_PRODUCT_IMAGE
-  $(BUILT_TARGET_FILES_DIR): $(INTERNAL_PRODUCTIMAGE_FILES)
+  $(BUILT_TARGET_FILES_DIR): $(INTERNAL_PRODUCTIMAGE_FILES) $(productimage_intermediates)/file_list.txt
   ifdef COPY_IMAGES_FOR_TARGET_FILES_ZIP
     $(BUILT_TARGET_FILES_DIR): $(BUILT_PRODUCTIMAGE_TARGET)
   endif
@@ -6648,7 +6659,7 @@ else ifdef BOARD_PREBUILT_PRODUCTIMAGE
 endif
 
 ifdef BUILDING_SYSTEM_EXT_IMAGE
-  $(BUILT_TARGET_FILES_DIR): $(INTERNAL_SYSTEM_EXTIMAGE_FILES)
+  $(BUILT_TARGET_FILES_DIR): $(INTERNAL_SYSTEM_EXTIMAGE_FILES) $(system_extimage_intermediates)/file_list.txt
   ifdef COPY_IMAGES_FOR_TARGET_FILES_ZIP
     $(BUILT_TARGET_FILES_DIR): $(BUILT_SYSTEM_EXTIMAGE_TARGET)
   endif
@@ -6665,7 +6676,7 @@ ifneq (,$(INTERNAL_PREBUILT_BOOTIMAGE) $(filter true,$(BOARD_COPY_BOOT_IMAGE_TO_
 endif
 
 ifdef BUILDING_ODM_IMAGE
-  $(BUILT_TARGET_FILES_DIR): $(INTERNAL_ODMIMAGE_FILES)
+  $(BUILT_TARGET_FILES_DIR): $(INTERNAL_ODMIMAGE_FILES) $(odmimage_intermediates)/file_list.txt
   ifdef COPY_IMAGES_FOR_TARGET_FILES_ZIP
     $(BUILT_TARGET_FILES_DIR): $(BUILT_ODMIMAGE_TARGET)
   endif
@@ -6674,7 +6685,7 @@ else ifdef BOARD_PREBUILT_ODMIMAGE
 endif
 
 ifdef BUILDING_VENDOR_DLKM_IMAGE
-  $(BUILT_TARGET_FILES_DIR): $(INTERNAL_VENDOR_DLKMIMAGE_FILES)
+  $(BUILT_TARGET_FILES_DIR): $(INTERNAL_VENDOR_DLKMIMAGE_FILES) $(vendor_dlkmimage_intermediates)/file_list.txt
   ifdef COPY_IMAGES_FOR_TARGET_FILES_ZIP
     $(BUILT_TARGET_FILES_DIR): $(BUILT_VENDOR_DLKMIMAGE_TARGET)
   endif
@@ -6683,7 +6694,7 @@ else ifdef BOARD_PREBUILT_VENDOR_DLKMIMAGE
 endif
 
 ifdef BUILDING_ODM_DLKM_IMAGE
-  $(BUILT_TARGET_FILES_DIR): $(INTERNAL_ODM_DLKMIMAGE_FILES)
+  $(BUILT_TARGET_FILES_DIR): $(INTERNAL_ODM_DLKMIMAGE_FILES) $(odm_dlkmimage_intermediates)/file_list.txt
   ifdef COPY_IMAGES_FOR_TARGET_FILES_ZIP
     $(BUILT_TARGET_FILES_DIR): $(BUILT_ODM_DLKMIMAGE_TARGET)
   endif
@@ -6692,7 +6703,7 @@ else ifdef BOARD_PREBUILT_ODM_DLKMIMAGE
 endif
 
 ifdef BUILDING_SYSTEM_DLKM_IMAGE
-  $(BUILT_TARGET_FILES_DIR): $(INTERNAL_SYSTEM_DLKMIMAGE_FILES)
+  $(BUILT_TARGET_FILES_DIR): $(INTERNAL_SYSTEM_DLKMIMAGE_FILES) $(system_dlkmimage_intermediates)/file_list.txt
   ifdef COPY_IMAGES_FOR_TARGET_FILES_ZIP
     $(BUILT_TARGET_FILES_DIR): $(BUILT_SYSTEM_DLKMIMAGE_TARGET)
   endif
@@ -6763,6 +6774,7 @@ $(BUILT_TARGET_FILES_DIR): \
 	    $(HOST_OUT_EXECUTABLES)/map_file_generator \
 	    $(ADD_IMG_TO_TARGET_FILES) \
 	    $(MAKE_RECOVERY_PATCH) \
+	    $(HOST_OUT_EXECUTABLES)/copy_partition_files \
 	    $(BUILT_KERNEL_CONFIGS_FILE) \
 	    $(BUILT_KERNEL_VERSION_FILE) \
 	    | $(ACP)
@@ -6906,8 +6918,8 @@ ifneq ($(SOONG_DEFINED_SYSTEM_IMAGE_PATH),)
 	$(hide) $(call package_files-copy-root, \
 	    $(SOONG_DEFINED_SYSTEM_IMAGE_BASE)/system/system,$(zip_root)/SYSTEM)
 else
-	$(hide) $(call package_files-copy-root, \
-	    $(SYSTEMIMAGE_SOURCE_DIR),$(zip_root)/SYSTEM)
+	$(hide) $(call package_files-copy-partition, \
+	    $(SYSTEMIMAGE_SOURCE_DIR),$(zip_root)/SYSTEM,$(systemimage_intermediates)/file_list.txt)
 endif
 	@# Content of the root folder
 	$(hide) mkdir -p $(zip_root)/ROOT
@@ -6922,48 +6934,48 @@ else ifdef INSTALLED_BUILD_PROP_TARGET
 endif
 ifdef BUILDING_USERDATA_IMAGE
 	@# Contents of the data image
-	$(hide) $(call package_files-copy-root, \
-	    $(TARGET_OUT_DATA),$(zip_root)/DATA)
+	$(hide) $(call package_files-copy-partition, \
+	    $(TARGET_OUT_DATA),$(zip_root)/DATA,$(userdataimage_intermediates)/file_list.txt)
 endif
 ifdef BUILDING_VENDOR_IMAGE
 	@# Contents of the vendor image
-	$(hide) $(call package_files-copy-root, \
-	    $(TARGET_OUT_VENDOR),$(zip_root)/VENDOR)
+	$(hide) $(call package_files-copy-partition, \
+	    $(TARGET_OUT_VENDOR),$(zip_root)/VENDOR,$(vendorimage_intermediates)/file_list.txt)
 endif
 ifdef BUILDING_PRODUCT_IMAGE
 	@# Contents of the product image
-	$(hide) $(call package_files-copy-root, \
-	    $(TARGET_OUT_PRODUCT),$(zip_root)/PRODUCT)
+	$(hide) $(call package_files-copy-partition, \
+	    $(TARGET_OUT_PRODUCT),$(zip_root)/PRODUCT,$(productimage_intermediates)/file_list.txt)
 endif
 ifdef BUILDING_SYSTEM_EXT_IMAGE
 	@# Contents of the system_ext image
-	$(hide) $(call package_files-copy-root, \
-	    $(TARGET_OUT_SYSTEM_EXT),$(zip_root)/SYSTEM_EXT)
+	$(hide) $(call package_files-copy-partition, \
+	    $(TARGET_OUT_SYSTEM_EXT),$(zip_root)/SYSTEM_EXT,$(system_extimage_intermediates)/file_list.txt)
 endif
 ifdef BUILDING_ODM_IMAGE
 	@# Contents of the odm image
-	$(hide) $(call package_files-copy-root, \
-	    $(TARGET_OUT_ODM),$(zip_root)/ODM)
+	$(hide) $(call package_files-copy-partition, \
+	    $(TARGET_OUT_ODM),$(zip_root)/ODM,$(odmimage_intermediates)/file_list.txt)
 endif
 ifdef BUILDING_VENDOR_DLKM_IMAGE
 	@# Contents of the vendor_dlkm image
-	$(hide) $(call package_files-copy-root, \
-	    $(TARGET_OUT_VENDOR_DLKM),$(zip_root)/VENDOR_DLKM)
+	$(hide) $(call package_files-copy-partition, \
+	    $(TARGET_OUT_VENDOR_DLKM),$(zip_root)/VENDOR_DLKM,$(vendor_dlkmimage_intermediates)/file_list.txt)
 endif
 ifdef BUILDING_ODM_DLKM_IMAGE
 	@# Contents of the odm_dlkm image
-	$(hide) $(call package_files-copy-root, \
-	    $(TARGET_OUT_ODM_DLKM),$(zip_root)/ODM_DLKM)
+	$(hide) $(call package_files-copy-partition, \
+	    $(TARGET_OUT_ODM_DLKM),$(zip_root)/ODM_DLKM,$(odm_dlkmimage_intermediates)/file_list.txt)
 endif
 ifdef BUILDING_SYSTEM_DLKM_IMAGE
 	@# Contents of the system_dlkm image
-	$(hide) $(call package_files-copy-root, \
-	    $(TARGET_OUT_SYSTEM_DLKM),$(zip_root)/SYSTEM_DLKM)
+	$(hide) $(call package_files-copy-partition, \
+	    $(TARGET_OUT_SYSTEM_DLKM),$(zip_root)/SYSTEM_DLKM,$(system_dlkmimage_intermediates)/file_list.txt)
 endif
 ifdef BUILDING_SYSTEM_OTHER_IMAGE
 	@# Contents of the system_other image
-	$(hide) $(call package_files-copy-root, \
-	    $(TARGET_OUT_SYSTEM_OTHER),$(zip_root)/SYSTEM_OTHER)
+	$(hide) $(call package_files-copy-partition, \
+	    $(TARGET_OUT_SYSTEM_OTHER),$(zip_root)/SYSTEM_OTHER,$(systemotherimage_intermediates)/file_list.txt)
 endif
 	@# Extra contents of the OTA package
 	$(hide) mkdir -p $(zip_root)/OTA
